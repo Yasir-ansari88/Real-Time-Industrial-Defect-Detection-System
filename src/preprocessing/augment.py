@@ -33,3 +33,24 @@ def build_transform():
             min_visibility=MIN_VISIBILITY,
         ),
     )
+
+def read_yolo_labels(label_path: Path):
+    bboxes, class_labels = [], []
+    if not label_path.exists():
+        return bboxes, class_labels
+    for line in label_path.read_text().strip().splitlines():
+        if not line.strip():
+            continue
+        parts = line.split()
+        cls = int(parts[0])
+        cx, cy, w, h = map(float, parts[1:5])
+        bboxes.append([cx, cy, w, h])
+        class_labels.append(cls)
+    return bboxes, class_labels
+
+def write_yolo_labels(label_path: Path, bboxes, class_labels):
+    lines = [
+        f"{cls} {bb[0]:.6f} {bb[1]:.6f} {bb[2]:.6f} {bb[3]:.6f}"
+        for cls, bb in zip(class_labels, bboxes)
+    ]
+    label_path.write_text("\n".join(lines) + ("\n" if lines else ""))
