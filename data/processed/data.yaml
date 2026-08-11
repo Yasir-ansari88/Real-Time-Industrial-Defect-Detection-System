@@ -1,0 +1,12 @@
+path: /content/Real-Time-Industrial-Defect-Detection-System/data/processed
+train: images/train
+val: images/val
+test: images/test
+nc: 6
+names:
+- crazing
+- inclusion
+- patches
+- pitted_surface
+- rolled-in_scale
+- scratches
