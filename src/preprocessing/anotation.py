@@ -5,11 +5,11 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 import yaml
 from tqdm import tqdm
-# NEU-DET class names -> YOLO class index
+
 CLASSES=["crazing","inclusion","patches","pitted_surface","rolled-in_scale","scratches"]
 CLASS_TO_IDX={name:i for i, name in enumerate(CLASSES)}
 def voc_to_yolo_bbox(xmin, ymin, xmax, ymax, img_w, img_h):
-    """Convert Pascal VOC (xmin,ymin,xmax,ymax) to YOLO (cx,cy,w,h), normalized 0-1."""
+    """ normalized 0-1."""
     cx = ((xmin + xmax) / 2) / img_w
     cy = ((ymin + ymax) / 2) / img_h
     w = (xmax - xmin) / img_w
@@ -17,7 +17,6 @@ def voc_to_yolo_bbox(xmin, ymin, xmax, ymax, img_w, img_h):
     return cx, cy, w, h
 
 def parse_voc_annotation(xml_path: Path):
-    """Parse a single Pascal VOC XML file into (image_filename, list of YOLO-format lines)."""
     tree = ET.parse(xml_path)
     root = tree.getroot()
 
@@ -29,7 +28,6 @@ def parse_voc_annotation(xml_path: Path):
     for obj in root.findall("object"):
         cls_name = obj.findtext("name").strip().lower().replace(" ", "_")
         if cls_name not in CLASS_TO_IDX:
-            # Skip unknown/typo'd classes rather than crash the whole ingestion
             print(f"  [warn] unknown class '{cls_name}' in {xml_path.name}, skipping object")
             continue
         cls_idx = CLASS_TO_IDX[cls_name]
@@ -79,13 +77,13 @@ def main():
     if not images_dir.exists() or not annots_dir.exists():
         raise FileNotFoundError(
             f"Expected {images_dir} and {annots_dir} to exist. "
-            f"Download NEU-DET and place it under {raw_dir} first (see data/README.md)."
         )
     xml_files = sorted(annots_dir.glob("*.xml"))
     if not xml_files:
         raise FileNotFoundError(f"No .xml annotation files found in {annots_dir}")
     print(f"Found {len(xml_files)} annotation files. Parsing...")
-    valid_items = []  # list of (image_path, yolo_lines)
+
+    valid_items = []
     skipped = 0
     for xml_path in tqdm(xml_files, desc="Parsing VOC annotations"):
         filename, yolo_lines = parse_voc_annotation(xml_path)
@@ -109,7 +107,7 @@ def main():
             label_path = lbl_out / f"{img_path.stem}.txt"
             label_path.write_text("\n".join(yolo_lines) + "\n")
         print(f"{split_name}: {len(items)} images")
-    # Write data.yaml for Ultralytics YOLOv8
+   
     data_yaml = {
         "path": str(out_dir.resolve()),
         "train": "images/train",
@@ -122,7 +120,7 @@ def main():
     with open(yaml_path, "w") as f:
         yaml.safe_dump(data_yaml, f, sort_keys=False)
         print(f"\nDone. data.yaml written to {yaml_path}")
-    print("Next (Day 3-5): run src/preprocessing/augment.py to build the augmentation pipeline.")
+        
 if __name__ == "__main__":
     main()
 
