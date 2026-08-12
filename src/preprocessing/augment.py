@@ -54,3 +54,32 @@ def write_yolo_labels(label_path: Path, bboxes, class_labels):
         for cls, bb in zip(class_labels, bboxes)
     ]
     label_path.write_text("\n".join(lines) + ("\n" if lines else ""))
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data-dir", type=str, default="data/processed")
+    parser.add_argument("--num-augmentations", type = int, default=3, help="How many augmented copies to generate per original train image")
+    parser.add_argument("--seed", type= int, default = 42)
+    args = parser.parse_args()
+
+    random.seed(args.seed)
+
+    data_dir = Path(args.data_dir)
+    train_img_dir = data_dir / "images" / "train"
+    train_lbl_dir = data_dir / "labels" / "train"
+
+    if not train_img_dir.exists():
+        raise FileNotFoundError(
+            f"{train_img_dir} not found."
+        )
+
+    original_images = sorted(
+        p for p in train_img_dir.glob("*.jpg") if "_aug" not in p.stem
+    )
+    if not original_images:
+        raise FileNotFoundError(f"No original .jpg images found in {train_img_dir}")
+
+    print(f"Found {len(original_images)} original training images.")
+    print(f"Generating {args.num_augmentations} augmented copies each " 
+          f"(~{len(original_images) * args.num_augmentations} new images)...")
+    
