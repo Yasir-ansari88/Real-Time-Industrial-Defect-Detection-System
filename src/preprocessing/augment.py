@@ -83,3 +83,43 @@ def main():
     print(f"Generating {args.num_augmentations} augmented copies each " 
           f"(~{len(original_images) * args.num_augmentations} new images)...")
     
+    transform = build_transform()
+
+    created, dropped_all_boxes = 0, 0
+    for img_path in tqdm(original_images, desc="Augmenting"):
+        label_path = train_lbl_dir / f"{img_path.stem}.txt"
+        bboxes, class_labels = read_yolo_labels(label_path)
+        if not bboxes:
+            continue  
+
+        image = cv2.imread(str(img_path))
+        if image is None:
+            continue
+
+        for aug_idx in range(args.num_augmentations):
+            augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
+            aug_bboxes = augmented["bboxes"]
+            aug_labels = augmented["class_labels"]
+
+            if not aug_bboxes:
+                dropped_all_boxes += 1
+                continue
+
+            out_stem = f"{img_path.stem}_aug{aug_idx + 1}"
+            out_img_path = train_img_dir / f"{out_stem}.jpg"
+            out_lbl_path = train_lbl_dir / f"{out_stem}.txt"
+
+            cv2.imwrite(str(out_img_path), augmented["image"])
+            write_yolo_labels(out_lbl_path, aug_bboxes, aug_labels)
+            created += 1
+
+    print(f"\nDone. Created {created} augmented image/label pairs.")
+    if dropped_all_boxes:
+        print(f"Skipped {dropped_all_boxes} augmentation attempts (all boxes fell "
+              f"outside frame / below visibility threshold - normal for aggressive ")
+    total_train = len(list(train_img_dir.glob("*.jpg")))
+    print(f"Train set size now: {total_train} images "
+          f"(was {len(original_images)} originals).")
+    
+if __name__ == "__main__":
+    main()
