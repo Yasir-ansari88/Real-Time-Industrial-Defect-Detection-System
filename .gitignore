@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+
+# models
+models/*.pt
+models/*.onnx
+models/*.engine
+
+# Logs / runs
+runs/
+*.log
+logs/
+
+# Env
+.env
