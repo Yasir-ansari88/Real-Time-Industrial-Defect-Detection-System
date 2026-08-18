@@ -63,3 +63,43 @@ def main():
             patience = args.tune_epochs,
             verbose = False,
         )
+
+        metrics = model.val()
+    class_names = metrics.names
+    per_class_mAP50 = {
+        class_names[i] : float(metrics.box.ap50[i])
+        for i in range(len(class_names))
+    }
+
+    result = {
+        "config" : name,
+        "params" : cfg,
+        "mAP50_overall" : float(metrics.box.map50),
+        "mAP50_95_overall" : float(metrics.box.map),
+        "per_class_mAP50" : per_class_mAP50,
+    }
+
+    all_results.append(result)
+    print(f"Results for {name} : mAP50 = {result['mAP50_overall']:.4f}",
+          f"crazing = {per_class_mAP50.get('crazing','N/A'),}"
+          f"rolled-in_scale = {per_class_mAP50.get('rolled-in_scale','N/A')},")
+          
+
+    all_results.sort(key=lambda r: r["mAP50_overall"], reverse=True)
+
+    print(f"\n{'='*60}\nSUMMARY (ranked by overall mAP50)\n{'='*60}")
+    for r in all_results:
+        weak = r["per_class_mAP50"]
+        print(
+            f"{r['config']:20s} overall={r['mAP50_overall']:.4f}  "
+            f"crazing={weak.get('crazing', 0):.4f}  "
+            f"rolled-in_scale={weak.get('rolled-in_scale', 0):.4f}"
+        )
+
+    out_path = Path(args.project) / "tuning_results.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(all_results, indent=2))
+    print(f"\nFull results saved to {out_path}")
+
+if __name__ == "__main__":
+    main()
