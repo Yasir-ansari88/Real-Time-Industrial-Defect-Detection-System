@@ -1,4 +1,4 @@
-path: C:/Real-Time-Industrial-Defect-Detection-System/data/processed
+path: /content/Real-Time-Industrial-Defect-Detection-System/data/processed
 train: images/train
 val: images/val
 test: images/test
