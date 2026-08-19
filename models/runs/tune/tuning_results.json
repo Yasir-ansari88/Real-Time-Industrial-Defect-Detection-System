@@ -1,0 +1,82 @@
+[
+  {
+    "config": "larger_imgsz",
+    "params": {
+      "name": "larger_imgsz",
+      "lr0": 0.01,
+      "imgsz": 832,
+      "degrees": 25,
+      "weight_decay": 0.0005
+    },
+    "mAP50_overall": 0.735153067574209,
+    "mAP50_95_overall": 0.38431500407059244,
+    "per_class_mAP50": {
+      "crazing": 0.30493328527971586,
+      "inclusion": 0.801733070722874,
+      "patches": 0.9142526862858464,
+      "pitted_surface": 0.8195464955657054,
+      "rolled-in_scale": 0.6209284153033943,
+      "scratches": 0.9495244522877189
+    }
+  },
+  {
+    "config": "gentler_rotation",
+    "params": {
+      "name": "gentler_rotation",
+      "lr0": 0.01,
+      "imgsz": 640,
+      "degrees": 10,
+      "weight_decay": 0.0005
+    },
+    "mAP50_overall": 0.7346509527487622,
+    "mAP50_95_overall": 0.4128562756683506,
+    "per_class_mAP50": {
+      "crazing": 0.30596012899942826,
+      "inclusion": 0.7968794053485727,
+      "patches": 0.9061722528267975,
+      "pitted_surface": 0.8059335117981616,
+      "rolled-in_scale": 0.6477592810624992,
+      "scratches": 0.9452011364571136
+    }
+  },
+  {
+    "config": "baseline",
+    "params": {
+      "name": "baseline",
+      "lr0": 0.01,
+      "imgsz": 640,
+      "degrees": 25,
+      "weight_decay": 0.0005
+    },
+    "mAP50_overall": 0.7189782230399434,
+    "mAP50_95_overall": 0.39878357971332984,
+    "per_class_mAP50": {
+      "crazing": 0.29808866751690793,
+      "inclusion": 0.8036724406002864,
+      "patches": 0.9313063815235745,
+      "pitted_surface": 0.7852616024474485,
+      "rolled-in_scale": 0.5778866488318375,
+      "scratches": 0.9176535973196055
+    }
+  },
+  {
+    "config": "lower_lr",
+    "params": {
+      "name": "lower_lr",
+      "lr0": 0.005,
+      "imgsz": 640,
+      "degrees": 25,
+      "weight_decay": 0.0005
+    },
+    "mAP50_overall": 0.7189782230399434,
+    "mAP50_95_overall": 0.39878357971332984,
+    "per_class_mAP50": {
+      "crazing": 0.29808866751690793,
+      "inclusion": 0.8036724406002864,
+      "patches": 0.9313063815235745,
+      "pitted_surface": 0.7852616024474485,
+      "rolled-in_scale": 0.5778866488318375,
+      "scratches": 0.9176535973196055
+    }
+  }
+]
