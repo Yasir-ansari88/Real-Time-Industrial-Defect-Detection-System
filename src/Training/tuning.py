@@ -65,25 +65,25 @@ def main():
         )
 
         metrics = model.val()
-    class_names = metrics.names
-    per_class_mAP50 = {
-        class_names[i] : float(metrics.box.ap50[i])
-        for i in range(len(class_names))
-    }
+        class_names = metrics.names
+        per_class_mAP50 = {
+            class_names[i] : float(metrics.box.ap50[i])
+            for i in range(len(class_names))
+        }
 
-    result = {
-        "config" : name,
-        "params" : cfg,
-        "mAP50_overall" : float(metrics.box.map50),
-        "mAP50_95_overall" : float(metrics.box.map),
-        "per_class_mAP50" : per_class_mAP50,
-    }
+        result = {
+            "config" : name,
+            "params" : cfg,
+            "mAP50_overall" : float(metrics.box.map50),
+            "mAP50_95_overall" : float(metrics.box.map),
+            "per_class_mAP50" : per_class_mAP50,
+        }
 
-    all_results.append(result)
-    print(f"Results for {name} : mAP50 = {result['mAP50_overall']:.4f}",
-          f"crazing = {per_class_mAP50.get('crazing','N/A'),}"
-          f"rolled-in_scale = {per_class_mAP50.get('rolled-in_scale','N/A')},")
-          
+        all_results.append(result)
+        print(f"Results for {name} : mAP50 = {result['mAP50_overall']:.4f}",
+            f"crazing = {per_class_mAP50.get('crazing','N/A'),}"
+            f"rolled-in_scale = {per_class_mAP50.get('rolled-in_scale','N/A')},")
+            
 
     all_results.sort(key=lambda r: r["mAP50_overall"], reverse=True)
 
