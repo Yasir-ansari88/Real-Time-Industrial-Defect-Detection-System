@@ -87,7 +87,7 @@ def main():
     train_lbl_dir = data_dir / "labels" / "train"
 
     if not train_img_dir.exists():
-        raise FileNotFoundError(f"{train_img_dir} not found. Run organize_annotations.py first.")
+        raise FileNotFoundError(f"{train_img_dir} not found.")
 
     original_images = sorted(
         p for p in train_img_dir.glob("*.jpg")
@@ -136,8 +136,7 @@ def main():
 
     total_train = len(list(train_img_dir.glob("*.jpg")))
     print(f"Train set size now: {total_train} images.")
-    print("\nRe-run training now — the target class(es) will appear more "
-          "often relative to others, without touching val/test.")
+    print("\nRe-run training ")
 
 
 if __name__ == "__main__":
