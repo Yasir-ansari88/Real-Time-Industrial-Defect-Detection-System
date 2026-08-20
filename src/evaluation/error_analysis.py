@@ -105,7 +105,7 @@ def main():
                     "image": img_path.name,
                     "class": class_names[gt["cls"]],
                 })
-    # 3. Report
+    
     print(f"\nTotal false positives: {len(fp_records)}")
     print(f"Total false negatives (missed detections): {len(fn_records)}")
 
@@ -133,7 +133,7 @@ def main():
             print(f"  Sample images with missed {cls} detections (inspect these):")
             for img in worst_images:
                 print(f"    - {img}")
-    # Save full records for later inspection
+    
     report = {
         "false_positives": fp_records,
         "false_negatives": fn_records,
@@ -143,10 +143,7 @@ def main():
     report_path = out_dir / "error_report.json"
     report_path.write_text(json.dumps(report, indent=2))
     print(f"\nFull FP/FN report saved to {report_path}")
-    print("\nNext: open the sample images listed above for weak classes and check "
-          "whether the defect is genuinely hard to see, mislabeled, or too small "
-          "relative to image size — that tells you whether to add more training "
-          "data, adjust augmentation, or increase image resolution.")
+    
 
 
 if __name__ == "__main__":
