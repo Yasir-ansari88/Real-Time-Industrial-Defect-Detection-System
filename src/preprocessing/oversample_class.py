@@ -60,3 +60,85 @@ def read_yolo_labels(label_path: Path):
         bboxes.append([cx, cy, w, h])
         class_labels.append(cls)
     return bboxes, class_labels
+def write_yolo_labels(label_path: Path, bboxes, class_labels):
+    lines = [
+        f"{cls} {bb[0]:.6f} {bb[1]:.6f} {bb[2]:.6f} {bb[3]:.6f}"
+        for cls, bb in zip(class_labels, bboxes)
+    ]
+    label_path.write_text("\n".join(lines) + ("\n" if lines else ""))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--data-dir", type=str, default="data/processed")
+    parser.add_argument("--target-classes", type=str, nargs="+", default=["crazing"])
+    parser.add_argument("--multiplier", type=int, default=3,
+                         help="Extra augmented copies per original image containing a target class")
+    parser.add_argument("--seed", type=int, default=42)
+    args = parser.parse_args()
+
+    for cls in args.target_classes:
+        if cls not in CLASS_TO_IDX:
+            raise ValueError(f"Unknown class '{cls}'. Valid options: {CLASSES}")
+    target_idxs = {CLASS_TO_IDX[c] for c in args.target_classes}
+
+    data_dir = Path(args.data_dir)
+    train_img_dir = data_dir / "images" / "train"
+    train_lbl_dir = data_dir / "labels" / "train"
+
+    if not train_img_dir.exists():
+        raise FileNotFoundError(f"{train_img_dir} not found. Run organize_annotations.py first.")
+
+    original_images = sorted(
+        p for p in train_img_dir.glob("*.jpg")
+        if "_aug" not in p.stem and "_oversample" not in p.stem
+    )
+
+    target_images = []
+    for img_path in original_images:
+        label_path = train_lbl_dir / f"{img_path.stem}.txt"
+        _, class_labels = read_yolo_labels(label_path)
+        if any(c in target_idxs for c in class_labels):
+            target_images.append(img_path)
+
+    print(f"Found {len(target_images)} original images containing "
+          f"{args.target_classes} (out of {len(original_images)} total originals).")
+    print(f"Generating {args.multiplier} extra augmented copies each "
+          f"(~{len(target_images) * args.multiplier} new images)...")
+
+    transform = build_transform()
+    created, dropped = 0, 0
+
+    for img_path in tqdm(target_images, desc="Oversampling"):
+        label_path = train_lbl_dir / f"{img_path.stem}.txt"
+        bboxes, class_labels = read_yolo_labels(label_path)
+        image = cv2.imread(str(img_path))
+        if image is None:
+            continue
+
+        for i in range(args.multiplier):
+            augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
+            aug_bboxes = augmented["bboxes"]
+            aug_labels = augmented["class_labels"]
+
+            if not aug_bboxes:
+                dropped += 1
+                continue
+
+            out_stem = f"{img_path.stem}_oversample{i + 1}"
+            cv2.imwrite(str(train_img_dir / f"{out_stem}.jpg"), augmented["image"])
+            write_yolo_labels(train_lbl_dir / f"{out_stem}.txt", aug_bboxes, aug_labels)
+            created += 1
+
+    print(f"\nDone. Created {created} oversampled image/label pairs.")
+    if dropped:
+        print(f"Skipped {dropped} attempts (all target boxes fell outside frame).")
+
+    total_train = len(list(train_img_dir.glob("*.jpg")))
+    print(f"Train set size now: {total_train} images.")
+    print("\nRe-run training now — the target class(es) will appear more "
+          "often relative to others, without touching val/test.")
+
+
+if __name__ == "__main__":
+    main()
