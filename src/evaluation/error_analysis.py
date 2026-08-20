@@ -2,7 +2,7 @@ import argparse
 import json
 from pathlib import Path 
 from ultralytics import YOLO
-def load_yolo_label(label_path:Path):
+def load_yolo_labels(label_path:Path):
     """Returns list of(class_id, cx, cy, w, h) - normalized YOLO format."""
     boxes=[]
     if not label_path.exists():
@@ -53,6 +53,118 @@ def main():
     print("Running model.val() for confusion matrix + standard metrics...")
     metrics=model.val(data=args.data, conf=args.conf, iou=args.iou,project=str(out_dir), name="val_confusion")
     print(f"Confusion matrix + PR curves saved under {out_dir}/val_confusion/")
+     
+    images_dir = Path(args.images_dir)
+    labels_dir = Path(args.labels_dir)
+    image_paths = sorted(images_dir.glob("*.jpg"))
+
+    fn_records = []  # missed ground-truth boxes
+    fp_records = []  # unmatched predictions
+    print(f"\nScanning {len(image_paths)} validation images for FP/FN...")
+    for img_path in image_paths:
+        gt_boxes_raw = load_yolo_labels(labels_dir / f"{img_path.stem}.txt")
+        if not gt_boxes_raw:
+            continue
+
+        result = model.predict(str(img_path), conf=args.conf, verbose=False)[0]
+        img_h, img_w = result.orig_shape
+        gt_boxes = [
+            {"cls": cls, "box": yolo_to_xyxy(cx, cy, w, h, img_w, img_h), "matched": False}
+            for cls, cx, cy, w, h in gt_boxes_raw
+        ]
+        pred_boxes = [
+            {
+                "cls": int(box.cls.item()),
+                "conf": float(box.conf.item()),
+                "box": tuple(box.xyxy[0].tolist()),
+                "matched": False,
+            }
+            for box in result.boxes
+        ]
+        for pred in pred_boxes:
+            best_iou, best_gt = 0.0, None
+            for gt in gt_boxes:
+                if gt["matched"] or gt["cls"] != pred["cls"]:
+                    continue
+                cur_iou = iou(pred["box"], gt["box"])
+                if cur_iou > best_iou:
+                    best_iou, best_gt = cur_iou, gt
+            if best_gt is not None and best_iou >= args.iou:
+                best_gt["matched"] = True
+                pred["matched"] = True
+                for pred in pred_boxes:
+                 if not pred["matched"]:
+                   fp_records.append({
+                     "image": img_path.name,
+                     "class": class_names[pred["cls"]],
+                     "confidence": round(pred["conf"], 3),
+                })
+                for gt in gt_boxes:
+                 if not gt["matched"]:
+                   fn_records.append({
+                    "image": img_path.name,
+                    "class": class_names[gt["cls"]],
+                })
+    # 3. Report
+    print(f"\nTotal false positives: {len(fp_records)}")
+    print(f"Total false negatives (missed detections): {len(fn_records)}")
+
+    from collections import Counter
+    fp_by_class = Counter(r["class"] for r in fp_records)
+    fn_by_class = Counter(r["class"] for r in fn_records)
+
+    print("\nFalse positives by class:")
+    for cls, count in fp_by_class.most_common():
+        print(f"  {cls}: {count}")
+
+    print("\nFalse negatives (missed) by class:")
+    for cls, count in fn_by_class.most_common():
+        print(f"  {cls}: {count}")
+
+    print("\n--- Focus: weak classes ---")
+    for cls in args.weak_classes:
+        print(f"\n{cls}:")
+        print(f"  False positives: {fp_by_class.get(cls, 0)}")
+        print(f"  False negatives (missed): {fn_by_class.get(cls, 0)}")
+        worst_images = sorted(
+            {r["image"] for r in fn_records if r["class"] == cls}
+        )[:10]
+        if worst_images:
+            print(f"  Sample images with missed {cls} detections (inspect these):")
+            for img in worst_images:
+                print(f"    - {img}")
+    # Save full records for later inspection
+    report = {
+        "false_positives": fp_records,
+        "false_negatives": fn_records,
+        "fp_by_class": dict(fp_by_class),
+        "fn_by_class": dict(fn_by_class),
+    }
+    report_path = out_dir / "error_report.json"
+    report_path.write_text(json.dumps(report, indent=2))
+    print(f"\nFull FP/FN report saved to {report_path}")
+    print("\nNext: open the sample images listed above for weak classes and check "
+          "whether the defect is genuinely hard to see, mislabeled, or too small "
+          "relative to image size — that tells you whether to add more training "
+          "data, adjust augmentation, or increase image resolution.")
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+   
+
+        
+
+
+
+
+
+
 
 
 
