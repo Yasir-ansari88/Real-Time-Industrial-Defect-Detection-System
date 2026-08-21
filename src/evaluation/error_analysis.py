@@ -81,6 +81,8 @@ def main():
             }
             for box in result.boxes
         ]
+        pred_boxes.sort(key=lambda p: p['conf'], reverse=True)
+
         for pred in pred_boxes:
             best_iou, best_gt = 0.0, None
             for gt in gt_boxes:
@@ -92,16 +94,18 @@ def main():
             if best_gt is not None and best_iou >= args.iou:
                 best_gt["matched"] = True
                 pred["matched"] = True
-                for pred in pred_boxes:
-                 if not pred["matched"]:
-                   fp_records.append({
-                     "image": img_path.name,
-                     "class": class_names[pred["cls"]],
-                     "confidence": round(pred["conf"], 3),
+
+        for pred in pred_boxes:
+            if not pred["matched"]:
+                fp_records.append({
+                    "image": img_path.name,
+                    "class": class_names[pred["cls"]],
+                    "confidence": round(pred["conf"], 3),
                 })
-                for gt in gt_boxes:
-                 if not gt["matched"]:
-                   fn_records.append({
+
+        for gt in gt_boxes:
+            if not gt["matched"]:
+                fn_records.append({
                     "image": img_path.name,
                     "class": class_names[gt["cls"]],
                 })
