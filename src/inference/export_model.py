@@ -1,5 +1,5 @@
 import argparse
-import pathlib as Path
+import os 
 
 from ultralytics import YOLO
 
@@ -11,11 +11,10 @@ def main():
     parser.add_argument("--half", action="store_true", help="Export in FP16")
     args = parser.parse_args()
 
-    weight_path = Path(args.weights)
-    if not weight_path.exists():
-        raise FileNotFoundError(f"{weight_path} not found")
+    if not os.path.exists(args.weights):
+        raise FileNotFoundError(f"{args.weights} not found")
 
-    model = YOLO(str(weight_path))
+    model = YOLO(str(args.weights))
 
     if args.format in ("onnx", "both"):
         print("Exporting to Onnx")
