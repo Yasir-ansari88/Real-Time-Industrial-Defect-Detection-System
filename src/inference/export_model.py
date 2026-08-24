@@ -27,3 +27,5 @@ def main():
         engin_path = model.export(format="engine", imgsz=args.imgsz, half=args.half)
         print(f"TensoRT Engine saved to : {engin_path}")
 
+if __name__ == "__main__":
+    main()
