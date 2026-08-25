@@ -6,13 +6,14 @@ from ultralytics import YOLO
 
 def benchmark(model_path: str, image_path:str, runs: int, warmup: int=10):
     model = YOLO(model_path)
+    device = "cpu" if model_path.endswith(".onnx") else None
 
     for _ in range(warmup):
-        model.predict(image_path, verbose=True)
+        model.predict(image_path, verbose=False, device = device)
 
     start = time.perf_counter()
     for _ in range(runs):
-        model.predict(image_path, verbose=False)
+        model.predict(image_path, verbose=False, device = device)
     elapsed = time.perf_counter() - start
 
     avg_ms = (elapsed / runs) * 1000
@@ -22,7 +23,7 @@ def benchmark(model_path: str, image_path:str, runs: int, warmup: int=10):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pt", type=str, help="Path to .pt weights")
-    parser.add_argument("--onnex", type=str, help="Path to .onnx weights")
+    parser.add_argument("--onnx", type=str, help="Path to .onnx weights")
     parser.add_argument("--engine", type=str, help="Path to .engine TensorAT weights")
     parser.add_argument("--image", type=str, required=True, help="Sample images to run")
     parser.add_argument("--runs", type=int, default=100)
@@ -33,8 +34,8 @@ def main():
 
     candidates = [
         ("Pytorch (.pt)", args.pt),
-        ("Onnex (.onnex)", args.onnex),
-        ("TensoRT (.engine),", args.engine)
+        ("Onnx (.onnex)", args.onnex),
+        ("TensoRT (.engine)", args.engine)
     ]
 
     results = []
