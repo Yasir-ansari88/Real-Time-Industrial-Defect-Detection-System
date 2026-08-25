@@ -34,7 +34,7 @@ def main():
 
     candidates = [
         ("Pytorch (.pt)", args.pt),
-        ("Onnx (.onnex)", args.onnex),
+        ("Onnx (.onnx)", args.onnx),
         ("TensoRT (.engine)", args.engine)
     ]
 
