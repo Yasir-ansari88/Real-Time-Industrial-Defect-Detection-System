@@ -32,4 +32,53 @@ def main():
     frame_count = 0
     t_start = time.perf_counter()
     smoothed_fps = 0.0
-    
+
+    print("Press 'q' to quit .")
+
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("End of video stream (or camera disconnected).")
+                break
+
+            t0 = time.perf_counter()
+            results = model.predict(frame, conf=args.conf, verbose=False)[0]
+            annotated = results.plot() 
+            t1 = time.perf_counter()
+
+            instant_fps = 1.0 / max(t1 - t0, 1e-6)
+            smoothed_fps = instant_fps if frame_count == 0 else 0.9 * smoothed_fps + 0.1 * instant_fps
+            cv2.putText(
+                annotated, f"FPS: {smoothed_fps:.1f}", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2,
+            )
+
+            if writer is not None:
+                writer.write(annotated)
+
+            if not args.no_display:
+                cv2.imshow("Defect Detection", annotated)
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    print("Quit requested.")
+                    break
+
+            frame_count += 1
+
+    except KeyboardInterrupt:
+        print("\nInterrupted.")
+
+    total_elapsed = time.perf_counter() - t_start
+    cap.release()
+    if writer is not None:
+        writer.release()
+    if not args.no_display:
+        cv2.destroyAllWindows()
+
+    if frame_count > 0:
+        print(f"\nProcessed {frame_count} frames in {total_elapsed:.1f}s "
+              f"(avg {frame_count / total_elapsed:.1f} FPS overall).")
+
+
+if __name__ == "__main__":
+    main()
