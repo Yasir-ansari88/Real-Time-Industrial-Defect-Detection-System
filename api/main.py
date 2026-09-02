@@ -35,3 +35,70 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+class Detection(BaseModel):
+    class_name: str
+    confidence: float
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+
+class PredictionResponse(BaseModel):
+    filename: str
+    image_width: int
+    image_height: int
+    inference_ms: float
+    detections: list[Detection]
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "model_loaded": model is not None}
+
+@app.get("/metrics")
+def metrics():
+    return Response(content=render_metrics(), media_type="text/plain")
+
+@app.post("/predict", response_model=PredictionResponse)
+async def predict(file: UploadFile = File(...)):
+    if model is None:
+        raise HTTPException(status_code=503, detail="Model not loaded yet.")
+
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="Uploaded file must be an image.")
+
+    contents = await file.read()
+    try:
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not read image: {e}")
+
+    t0 = time.perf_counter()
+    results = model.predict(image, conf=CONF_THRESHOLD, verbose=False)[0]
+    inference_ms = (time.perf_counter() - t0) * 1000
+
+    INFERENCE_LATENCY.observe(inference_ms / 1000)
+    PREDICTION_COUNTER.inc()
+
+    detections = []
+    for box in results.boxes:
+        x1, y1, x2, y2 = box.xyxy[0].tolist()
+        detections.append(
+            Detection(
+                class_name=model.names[int(box.cls)],
+                confidence=float(box.conf),
+                x1=x1, y1=y1, x2=x2, y2=y2,
+            )
+        )
+
+    return PredictionResponse(
+        filename=file.filename or "unknown",
+        image_width=image.width,
+        image_height=image.height,
+        inference_ms=round(inference_ms, 2),
+        detections=detections,
+    )
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)
