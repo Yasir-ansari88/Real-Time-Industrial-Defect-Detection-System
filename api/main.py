@@ -12,7 +12,7 @@ from ultralytics import YOLO
 from monitoring.metrices import track_uptime_start, PREDICTION_COUNTER, INFERENCE_LATENCY, render_metrics
 
 
-MODEL_PATH = os.environ.get("MODEL_PATH", "E:\Real-Time Industrial Defect Detection System\models\yolov8n_neu_final.pt")
+MODEL_PATH = os.environ.get("MODEL_PATH", "models/yolov8n_neu_final.pt")
 CONF_THRESHOLD = float(os.environ.get("CONF_THRESHOLD", "0.25"))
 
 model = None
