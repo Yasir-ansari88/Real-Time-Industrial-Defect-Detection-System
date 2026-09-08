@@ -1,0 +1,15 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+data/
+models/runs/
+*.ipynb
+
+.git/
+.gitignore
+
+*.zip
+*.mp4
+*.avi
