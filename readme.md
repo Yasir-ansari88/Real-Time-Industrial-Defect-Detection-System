@@ -195,5 +195,25 @@ Detection results can be connected to a production-line sorting mechanism to sep
 
 Prometheus and Grafana can be used to monitor system performance and inference-related metrics.
 
+##  Getting Started
+
+### 1. install dependencis
+'''
+pip install -r requirements.txt
+'''
+ 
+### 2. Clone / open the project
+ 
+```powershell
+cd "E:\Real-Time Industrial Defect Detection System"
+```
+ 
+### 3. Build and start all services
+ 
+```powershell
+docker compose -f docker/docker-compose.yml up --build
+```
+
+
 ---
 
